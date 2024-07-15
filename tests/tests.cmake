@@ -1,0 +1,12 @@
+macro(make_test NAME WILL_FAIL)
+    add_executable(test.unit.${NAME} ${SOURCES} ${COMMON_TESTS_SOURCES} tests/${NAME}.cpp)
+    add_test(unit.${NAME} test.unit.${NAME})
+    set_tests_properties(unit.${NAME} PROPERTIES WILL_FAIL ${WILL_FAIL})
+endmacro()
+
+make_test(logic.increase_counter OFF)
+make_test(logic.reset_counter OFF)
+make_test(templates.delegate OFF)
+make_test(templates.optional OFF)
+make_test(templates.trackable_value OFF)
+make_test(utils.win32_strerror OFF)
