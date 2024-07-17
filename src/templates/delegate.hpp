@@ -5,7 +5,7 @@
 #pragma once
 
 #include <functional>
-#include <vector>
+#include <map>
 #include <assert.h>
 
 namespace templates
@@ -14,14 +14,24 @@ namespace templates
 	class delegate { public: delegate() { assert(!"the given type was not a function pointer"); } };
 	template<typename _ret, typename... _args>
 	class delegate<_ret(_args...)>
-	{	typedef _ret(_func)(_args...);
+	{	public:
+			typedef _ret(_func)(_args...);
+			typedef int bond_handle;
 		private:
-			std::vector<std::function<_func>> bound_functions;
+			std::map<bond_handle, std::function<_func>> bound_functions;
+			bond_handle last_callback_handle = -1;
 		public:
-			void bind(std::function<_func> func) { bound_functions.push_back(func); }
+			bond_handle bind(std::function<_func> func) { return internal_bind(func); }
 			template<typename _class>
-			void bind(_class * object, _ret(_class::*method)(_args...)) { bound_functions.push_back([=](_args... args){ return (object->*method)(args...); }); }
-			void broadcast(_args... args) { for(auto func : bound_functions) func(args...); }
+			bond_handle bind(_class * object, _ret(_class::*method)(_args...)) { return internal_bind([=](_args... args) { return (object->*method)(args...); }); }
+			void broadcast(_args... args) { for(auto pair : bound_functions) pair.second(args...); }
+			void unbind(bond_handle callback_handle) { bound_functions.erase(callback_handle); }
 			void operator()(_args... args) { broadcast(args...); }
+		private:
+			bond_handle internal_bind(std::function<_func> func)
+			{	++last_callback_handle;
+				bound_functions[last_callback_handle] = func;
+				return last_callback_handle;
+			}
 	};
 }
